@@ -54,6 +54,7 @@ class Controller:
         self.target_position = np.array(target_position)
         now_position = self.getPosition('controller')
         self.controller_position = now_position
+        print(target_position, now_position)
         delta_position = np.array(target_position)-np.array(now_position)
         distance = np.linalg.norm(delta_position, ord=2)
         if distance <= 0.005:
