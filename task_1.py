@@ -36,7 +36,7 @@ def main():
         vision_handle_1=vision_handle_1,
         synchronous=synchronous_flag,
         time_interval=time_interval,
-        v_max=0.03,
+        v_max=0.05,
         v_add=0.0005,
         v_sub=0.0005,
         v_min=0.01,
@@ -67,8 +67,10 @@ def main():
         photo_interval = 20
         photo_count = photo_interval
         find_flag = False
+        pos_now = np.array(flight_controller.getPosition('controller')[:2])
+        start_num = find_nearest_point_num(pos_now, search_points)
         while True:
-            for target_point in search_points:
+            for target_point in search_points[start_num:]:
                 target_point.append(base_position[2])
                 target_point = np.array(target_point)
                 flight_controller.moveTo(target_point, 1, 1, True)
@@ -89,29 +91,34 @@ def main():
                     break
             if find_flag:
                 break
+            start_num = 0
         print("Find Target", target_position)
                             
         # 发现目标
         speed_predictor = SpeedPredictor(target_height, bounds, max_predict_step=1, extra_time=0)
-        photo_interval = 5
-        photo_count = photo_interval
+        speed_predictor.give_new_information(np.array(target_position))
+        photo_interval = 10
+        photo_count = 0
         stop_height = 1.3
         flag = True
         while True:
             flight_controller.moveTo(target_position, 1, 1, True)
-            print(target_position)
             if photo_count >= photo_interval and flight_controller.getPosition('controller')[2] >= stop_height:
                 flight_controller.to_take_photos()
                 photo_count = 0
             else:
                 photo_count += 1
             result = flight_controller.step_forward_move()
+            if not result['flag']:
+                print("重新搜索")
+                break
             speed_predictor.step_forward()
             if 'photos' in result:
                 print("Get Photos")
                 pos = zedDistance(clientID, result['photos'][1], result['photos'][0])
                 # _, land_handle = vrep.simxGetObjectHandle(clientID, "land_plane", vrep.simx_opmode_blocking)
                 # _, actual_pos = vrep.simxGetObjectPosition(clientID, land_handle, -1, vrep.simx_opmode_blocking)
+                # examine(pos, actual_pos, result['photos'][0], result['photos'][1])
                 # pos = actual_pos
                 if pos is not None:
                     speed_predictor.give_new_information(np.array(pos))
@@ -144,13 +151,28 @@ def main():
     vrep.simxFinish(clientID)
 
 
+image_number_now = 0
 def examine(pos, actual_pos, image_0=None, image_1=None, zed_0_orientation=None, zed_1_orientation=None):
+    global image_number_now
+    if pos is None or actual_pos is None:
+        return
     pos = np.array(pos)
     actual_pos = np.array(actual_pos)
-    print(pos, actual_pos)
     if (pos[0]-actual_pos[0])**2 >= 0.01:
-        print(pos, actual_pos)
-    
+        cv2.imwrite("images/"+str(image_number_now)+'zed0.jpg', image_0)
+        cv2.imwrite("images/"+str(image_number_now)+'zed1.jpg', image_1)
+        image_number_now += 1
+
+
+def find_nearest_point_num(pos_now, search_points):
+    distance_min = -1
+    num_min = -1
+    for num in range(len(search_points)):
+        delta_distance = np.linalg.norm(search_points[num] - pos_now)
+        if delta_distance < distance_min or distance_min == -1:
+            distance_min = delta_distance
+            num_min = num
+    return num_min
 
 
 if __name__ == '__main__':

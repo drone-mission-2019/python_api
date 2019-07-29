@@ -56,11 +56,15 @@ class Controller:
         self.controller_position = now_position
         delta_position = np.array(target_position)-np.array(now_position)
         distance = np.linalg.norm(delta_position, ord=2)
+        if distance <= 0.005:
+            return
         if not self.use_constant_v:
-            target_orientation = delta_position/distance
+            if distance == 0:
+                target_orientation = np.array([0.0,0.0,0.0])
+            else:
+                target_orientation = delta_position/distance
             v1 = 0 if start_speed == 0 else (self.v_now if start_speed == 1 else self.v_min)
             if self.target_orientation is not None and target_orientation.dot(self.target_orientation) <= 0.5:
-                print("!", target_orientation.dot(self.target_orientation))
                 v1 = 0
             v2 = 0 if end_speed == 0 else self.v_min
             self.target_orientation = target_orientation
@@ -92,54 +96,10 @@ class Controller:
         else:
             target_orientation = delta_position/distance
 
-    def moveToWithSpeed(self, target_position, start_speed, end_speed, accurate_move, target_speed):
-        # start_speed: 0: start with 0, 1: start with v_now, 2: start with v_min
-        # end_speed: 0: end with 0, 1: end with v_min
-        # accurate_move: True: accurate move (may cause v change), False: not accurate move
-        if not self.moving_queue.empty():
-            self.moving_queue = Queue()
-        self.target_position = np.array(target_position)
-        now_position = self.getPosition('controller')
-        self.controller_position = now_position
-        delta_position = np.array(target_position)-np.array(now_position)
-        distance = np.linalg.norm(delta_position, ord=2)
-        if not self.use_constant_v:
-            target_orientation = delta_position/distance
-            v1 = 0 if start_speed == 0 else (self.v_now if start_speed == 1 else self.v_min)
-            if self.target_orientation is not None and target_orientation.dot(self.target_orientation) <= 0.5:
-                print("!", target_orientation.dot(self.target_orientation))
-                v1 = 0
-            v2 = 0 if end_speed == 0 else self.v_min
-            self.target_orientation = target_orientation
-            v_max_possible = 1/(1/self.v_add+1/self.v_sub)*\
-                (target_speed/self.v_add+target_speed/self.v_sub+1/(self.v_add*self.v_sub)*\
-                math.sqrt((self.v_add+self.v_sub)*(target_speed**2*self.v_add-2*target_speed*v2*self.v_add+v2**2*self.v_add+target_speed**2*self.v_sub-2*target_speed*v1*self.v_sub+v1**2*self.v_sub+2*distance*self.v_add*self.v_sub+v1*self.v_add*self.v_sub-v2*self.v_add*self.v_sub)))
-            v_max = v_max_possible if v_max_possible <= self.v_max else self.v_max
-            t_add = int((v_max-v1)/self.v_add)
-            t_sub = int((v_max-v2)/self.v_sub)
-            v_max = t_add*self.v_add+v1
-            distance_constant = distance - t_add*(v_max+v1+self.v_add)/2 - t_sub*(v_max+v2-self.v_sub)/2
-            t_constant = int(distance_constant/(v_max-target_speed))
-            distance_remain = distance_constant - t_constant * (v_max-target_speed)
+    
+    def rushTo(self, target_position, start_speed, accurate_move):
+        pass
 
-            flag = not accurate_move
-            v_now_tmp = v1
-            for i in range(t_add):
-                v_now_tmp = v_now_tmp + self.v_add
-                self.moving_queue.put(v_now_tmp)
-            for i in range(t_constant):
-                self.moving_queue.put(v_now_tmp)
-            for i in range(t_sub):
-                v_now_tmp = v_now_tmp - self.v_sub
-                if v_now_tmp <= distance_remain and not flag:
-                    flag = True
-                    self.moving_queue.put(distance_remain)
-                self.moving_queue.put(v_now_tmp)
-            if not flag:
-                self.moving_queue.put(distance_remain)
-            self.left_time = self.moving_queue.qsize()
-        else:
-            target_orientation = delta_position/distance
 
     def step_forward_move(self):
         result = {}

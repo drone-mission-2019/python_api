@@ -44,9 +44,11 @@ class SpeedPredictor:
         total_delta_distance = sum(delta_distance_list)
         if np.linalg.norm(total_delta_distance) == 0:
             target_orientation = [0,0]
+            target_speed = 0
         else:
             target_orientation = total_delta_distance/np.linalg.norm(total_delta_distance)
-        target_speed = np.linalg.norm(total_delta_distance)/total_delta_time
+            target_speed = np.linalg.norm(total_delta_distance)/total_delta_time
+        print(left_time, target_orientation, target_speed)
         final_position = left_time * target_orientation * target_speed + self.position_list[-1][:2]
         final_position = list(final_position)
         delta_position = np.array(controller_position[:2])-self.position_list[-1][:2]
