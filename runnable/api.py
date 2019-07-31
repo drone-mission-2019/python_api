@@ -1,5 +1,5 @@
-from .utils import *
-import runnable.qr_code as qr_code
+from utils import *
+import qr_code
 from queue import Queue
 from sklearn.cluster import KMeans
 
@@ -169,7 +169,7 @@ def get_people(img, fuck_threshold):
                         fuck1 = img2[x, y].astype(np.float64)
                         fuck2 = img2[xx, yy].astype(np.float64)
                         dist = np.abs(fuck1 - fuck2).sum()
-                        if dist > 10:
+                        if dist > 5:
                             continue
                         visit[xx, yy] = 1
                         belong[xx, yy] = cnt
@@ -195,7 +195,7 @@ def get_people(img, fuck_threshold):
             cc = 1.9
         else:
             cc = 2.2
-        if (x.max() - x.min()) > 60 * cc or (y.max() - y.min()) > 60 * cc or len(pp) > 300 * cc * cc:
+        if (x.max() - x.min()) > 60 * cc or (y.max() - y.min()) > 60 * cc or len(pp) > 800 * cc * cc:
             for p in pp:
                 img2[p[0], p[1]] = [255, 255, 255]
     # show_image(img2)
@@ -205,10 +205,8 @@ def get_people(img, fuck_threshold):
     fuck2_all = np.array([204.345, 198.48, 189.49])
     tmp = (img2 < 2).sum(axis=2)
     img2[tmp == 3] = [255, 255, 255]
-    img2[np.abs(img2 - fuck1_all).max(axis=2) < 15] = [255, 255, 255]
-    img2[np.abs(img2 - fuck2_all).max(axis=2) < 15] = [255, 255, 255]
-    tmp = img2[:, :, 0].astype(np.int64) + img2[:, :, 1] + img2[:, :, 2]
-    img2[tmp > 700] = [255, 255, 255]
+    img2[np.abs(img2 - fuck1_all).max(axis=2) < 10] = [255, 255, 255]
+    img2[np.abs(img2 - fuck2_all).max(axis=2) < 10] = [255, 255, 255]
     img2 = cv2.resize(img2, (320, 180))
     # show_image(img2)
     visit = np.zeros((img2.shape[0], img2.shape[1]))
