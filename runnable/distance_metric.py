@@ -4,9 +4,7 @@ import math
 import vrep
 from .api import *
 
-
 assist_object_handle = None
-
 def left_transformation(dimension_array, transplant, x, y, z):
     alpha, beta, gama = dimension_array
     src_coordinates = np.array([x, y, z])
@@ -40,6 +38,32 @@ def trivial_transformation(clientID, x, y, z):
     
 def toRadians(args):
     return math.radians(args)
+
+def reprojectionTo3D(cliendID, zed1, zed0):
+    B = 0.12
+    P_x = 1280.0
+    P_y = 720.0
+    alpha = 85.0
+    beta = 54.0
+
+    x_l = 0.0
+    x_r = 0.0
+    y_p = 0.0
+
+    x0, y0 = zed0
+    x1, y1 = zed1
+    x_l = x1 - P_x / 2
+    x_r = x0 - P_x / 2
+    y_p = P_y / 2 - (y0)
+
+    alpha_rad = toRadians(alpha)
+    beta_rad = toRadians(beta)
+    if x_l == x_r:
+        x_l += 1
+    x = (B * x_l) / (x_l - x_r)
+    y = (B * P_x * math.tan(beta_rad / 2) * y_p) / ((x_l - x_r) * P_y * math.tan(alpha_rad / 2))
+    z = (B * P_x / 2) / ((x_l - x_r) * math.tan(alpha_rad / 2))
+    return trivial_transformation(clientID, -x, -y, z)
 
 def zedDistance(clientID, zed1, zed0):
     """
@@ -81,6 +105,65 @@ def zedDistance(clientID, zed1, zed0):
     y = (B * P_x * math.tan(beta_rad / 2) * y_p) / ((x_l - x_r) * P_y * math.tan(alpha_rad / 2))
     z = (B * P_x / 2) / ((x_l - x_r) * math.tan(alpha_rad / 2))
     return trivial_transformation(clientID, -x, -y, z)
+
+
+def get_people_pos(clientID, zed1, zed0, last_position, color_threshold=math.sqrt(300)):
+    def get_min_distance(pos0, pos1_list, threshold=None):
+        min_distance = -1
+        min_num = -1
+        for i in range(len(pos1_list)):
+            pos1 = pos1_list[i]
+            distance_now = np.linalg.norm(np.array(pos0)-np.array(pos1))
+            if min_num == -1 or distance_now < min_distance:
+                if threshold is not None:
+                    if distance_now <= threshold:
+                        min_distance = distance_now
+                        min_num = i
+                else:
+                    min_distance = distance_now
+                    min_num = i
+        return pos1_list[min_num]
+    
+    B = 0.12
+    P_x = 1280.0
+    P_y = 720.0
+    alpha = 85.0
+    beta = 54.0
+
+    x_l = 0.0
+    x_r = 0.0
+    y_p = 0.0
+
+    result0_list = get_people(zed0, False)
+    result1_list = get_people(zed1, True)
+    if len(result0_list) == 0 or len(result1_list) == 0:
+        return None, None
+
+    pos_result = []
+    color_result = []
+    for i in range(len(result0_list)):
+        pos0, color0 = result0_list[i]
+        for j in range(len(result1_list)):
+            pos1, color1 = result1_list[j]
+            if np.linalg.norm(np.array(color0)-np.array(color1)) > color_threshold:
+                continue
+            x0, y0 = pos0
+            x1, y1 = pos1
+            x_l = x1 - P_x / 2
+            x_r = x0 - P_x / 2
+            y_p = P_y / 2 - (y0)
+
+            alpha_rad = toRadians(alpha)
+            beta_rad = toRadians(beta)
+            if x_l == x_r:
+                x_l += 1
+            x = (B * x_l) / (x_l - x_r)
+            y = (B * P_x * math.tan(beta_rad / 2) * y_p) / ((x_l - x_r) * P_y * math.tan(alpha_rad / 2))
+            z = (B * P_x / 2) / ((x_l - x_r) * math.tan(alpha_rad / 2))
+            pos_result.append(trivial_transformation(clientID, -x, -y, z)[:2])
+            color_result.append((np.array(color0)+np.array(color1))/2)
+    return pos_result, color_result
+
 
 if __name__ == '__main__':
     img0 = cv2.imread('5zed0.jpg')

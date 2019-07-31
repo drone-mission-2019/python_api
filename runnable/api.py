@@ -1,5 +1,7 @@
 from .utils import *
 import runnable.qr_code as qr_code
+from queue import Queue
+from sklearn.cluster import KMeans
 
 
 #
@@ -131,9 +133,104 @@ def get_E_or_T(img):
     return True, ((min_x, min_y, max_x, max_y), ans)
 
 
+#
+# API to detect target(T) and end(E) in images.
+#
+# Parameters:
+#   img: (m * n * 3) numpy ndarray of RGB format
+#       The input image to detect.
+#   eye: boolean
+#       eye=True: left eye.
+#       eye=False: right eye.
+#
+# Returns:
+#   people: list of tuple(int, int)
+#       Each tuple represent a coordinate of people.
+#
+def get_people(img, eye):
+    fuck1 = np.array([172.87, 182.88, 188.63])
+    fuck2 = np.array([189.49, 198.48, 204.345])
+    fuck1_all = np.array([188.63, 182.88, 172.87])
+    fuck2_all = np.array([204.345, 198.48, 189.49])
+    img2 = img.copy()
+    tmp = (img2 < 2).sum(axis=2)
+    img2[tmp == 3] = [255, 255, 255]
+    img2[np.abs(img2 - fuck1_all).max(axis=2) < 20] = [255, 255, 255]
+    img2[np.abs(img2 - fuck2_all).max(axis=2) < 20] = [255, 255, 255]
+    tmp = img2[:, :, 0].astype(np.int64) + img2[:, :, 1] + img2[:, :, 2]
+    img2[tmp > 700] = [255, 255, 255]
+    img2 = cv2.resize(img2, (320, 180))
+    # print(img2.shape)
+    if eye:
+        img2[:30, 275:] = [255, 255, 255]
+        img2[:60, :35] = [255, 255, 255]
+    else:
+        img2[:30, 125:170] = [255, 255, 255]
+        img2[:30, 300:] = [255, 255, 255]
+    # show_image(img2)
+    visit = np.zeros((img2.shape[0], img2.shape[1]))
+    belong = np.zeros(visit.shape)
+    cnt = 0
+    for i in range(img2.shape[0]):
+        for j in range(img2.shape[1]):
+            if not visit[i, j] and (img2[i, j] == 255).sum() < 3:
+                Q = Queue()
+                Q.put((i, j))
+                visit[i, j] = 1
+                cnt += 1
+                belong[i, j] = cnt
+                dx = [-1, 0, 0, 1]
+                dy = [0, -1, 1, 0]
+                while not Q.empty():
+                    x, y = Q.get()
+                    for k in range(4):
+                        xx = x + dx[k]
+                        yy = y + dy[k]
+                        if xx < 0 or xx >= img2.shape[0] or yy < 0 or yy >= \
+                                img2.shape[1]:
+                            continue
+                        if visit[xx, yy] == 1 or (
+                                img2[xx, yy] == 255).sum() == 3:
+                            continue
+                        visit[xx, yy] = 1
+                        belong[xx, yy] = cnt
+                        Q.put((xx, yy))
+    points = [[] for i in range(cnt + 1)]
+    for i in range(img2.shape[0]):
+        for j in range(img2.shape[1]):
+            if belong[i, j] > 0:
+                points[int(belong[i, j])].append((i, j))
+    img3 = img2.copy()
+    img3[:, :] = [255, 255, 255]
+    threshold = 200
+    new_points = []
+    for pp in points:
+        if len(pp) > threshold:
+            new_points.append(pp)
+            for p in pp:
+                img3[p[0], p[1]] = img2[p[0], p[1]]
+    # show_image(img3)
+    ans = []
+    for pp in new_points:
+        x = np.array([t[0] for t in pp]).mean()
+        y = np.array([t[1] for t in pp]).mean()
+        X = np.zeros((len(pp), 3))
+        for i, p in enumerate(pp):
+            color = img3[p[0], p[1]]
+            X[i] = color
+        # print(X)
+        kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
+        # print(kmeans.cluster_centers_)
+        # print(kmeans.labels_)
+        num = np.zeros(3)
+        for label in kmeans.labels_:
+            num[label] += 1
+        t = num.argmax()
+        color = kmeans.cluster_centers_[t]
+        ans.append(((int(y * 4 + 2), int(x * 4 + 2)), color))
+    return ans
+
+
 if __name__ == '__main__':
-    from utils import *
-    img = read_image('testcase/cylinder.jpg')
-    print(img.shape)
-    flag, pos = get_cylinder(img)
-    print(flag, pos)
+    img = read_image('testcase/zuoyan.jpeg')
+    print(get_people(img, True))

@@ -54,7 +54,6 @@ class Controller:
         self.target_position = np.array(target_position)
         now_position = self.getPosition('controller')
         self.controller_position = now_position
-        print("target:", target_position, "now:", now_position)
         delta_position = np.array(target_position)-np.array(now_position)
         distance = np.linalg.norm(delta_position, ord=2)
         if distance <= 0.005:
@@ -65,8 +64,6 @@ class Controller:
             else:
                 target_orientation = delta_position/distance
             v1 = 0 if start_speed == 0 else (self.v_now if start_speed == 1 else self.v_min)
-            if self.target_orientation is not None and target_orientation.dot(self.target_orientation) <= 0.5:
-                v1 = 0
             v2 = 0 if end_speed == 0 else self.v_min
             self.target_orientation = target_orientation
             v_max_possible = math.sqrt((v2**2*self.v_add+v1**2*self.v_sub+2*distance*self.v_add*self.v_sub+v1*self.v_add*self.v_sub-v2*self.v_add*self.v_sub)/(self.v_add+self.v_sub))
@@ -107,6 +104,14 @@ class Controller:
         if self.synchronous:
             if self.moving_queue.empty():
                 result['flag'] = False
+                vrep.simxSynchronousTrigger(self.clientID)
+                # take photos if needed
+                if self.need_take_photo:
+                    image_0 = self.getImage(0)
+                    image_1 = self.getImage(1)
+                    if image_0 is not None and image_1 is not None:
+                        result['photos'] = [image_0, image_1]
+                        self.need_take_photo = False
             else:
                 speed = self.moving_queue.get()
                 self.move(self.target_orientation, speed)
