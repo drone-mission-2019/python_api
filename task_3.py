@@ -105,9 +105,11 @@ def main():
         for i in range(time_interval):
             result = flight_controller.step_forward_move()
             if 'photos' in result:
-                pos_list = get_people_pos(clientID, result['photos'][1], result['photos'][0])
                 cv2.imwrite("task_3_2/"+str(photo_num)+"zed0.jpg", result['photos'][0])
                 cv2.imwrite("task_3_2/"+str(photo_num)+"zed1.jpg", result['photos'][1])
+                photo_0 = cv2.imread("task_3_2/"+str(photo_num)+"zed0.jpg")
+                photo_1 = cv2.imread("task_3_2/"+str(photo_num)+"zed1.jpg")
+                pos_list = get_people_pos(clientID, photo_1, photo_0)
                 photo_num += 1
                 next_position = people_chooser.find_next_position(pos_list)
                 next_position.append(target_position[2])

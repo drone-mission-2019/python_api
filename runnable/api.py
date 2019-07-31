@@ -1,6 +1,6 @@
-from utils import *
+from .utils import *
 # import runnable.qr_code as qr_code
-import qr_code
+import runnable.qr_code as qr_code
 from queue import Queue
 from sklearn.cluster import KMeans
 

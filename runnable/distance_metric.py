@@ -134,8 +134,8 @@ def get_people_pos(clientID, zed1, zed0):
     x_r = 0.0
     y_p = 0.0
 
-    result0_list = get_people(zed0, 200)
-    result1_list = get_people(zed1, 200)
+    result0_list = get_people(zed0.copy(), 150)
+    result1_list = get_people(zed1.copy(), 150)
     if len(result0_list) == 0 or len(result1_list) == 0:
         return None, None
 
