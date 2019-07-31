@@ -1,0 +1,11 @@
+*
+!*.ipynb
+!.gitignore
+!*.py
+!*.dll
+!runnable
+!rrt_path_planning
+!face_recognition
+runnable/__pycache__
+rrt_path_planning/__pycache__
+face_recognition/__pycache__
