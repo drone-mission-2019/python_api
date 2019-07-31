@@ -1,5 +1,6 @@
-from .utils import *
-import runnable.qr_code as qr_code
+from utils import *
+# import runnable.qr_code as qr_code
+import qr_code
 from queue import Queue
 from sklearn.cluster import KMeans
 
@@ -273,7 +274,7 @@ def get_people(img, fuck_threshold):
             for p in pp:
                 img3[p[0], p[1]] = img2[p[0], p[1]]
     # img3[(img3.sum(axis=2) < 200)] = [0, 255, 0]
-    show_image(img3)
+    # show_image(img3)
     ans = []
     for pp in new_points:
         X = np.zeros((len(pp), 3))
@@ -292,16 +293,16 @@ def get_people(img, fuck_threshold):
         #     if label == t:
         #         print(X[i])
         color = kmeans.cluster_centers_[t]
-        tmp = []
-        for p in pp:
-            if img3[p[0], p[1]].sum() < 200:
-                tmp.append(p)
-        tmp = sorted(tmp)
-        if len(tmp) == 0:
-            continue
-        x, y = tmp[0]
-        # y = np.array([t[1] for t in pp]).mean()
-        # x = np.percentile(np.array([t[0] for t in pp]), 5)
+        # tmp = []
+        # for p in pp:
+        #     if img3[p[0], p[1]].sum() < 200:
+        #         tmp.append(p)
+        # tmp = sorted(tmp)
+        # if len(tmp) == 0:
+        #     continue
+        # x, y = tmp[0]
+        y = np.array([t[1] for t in pp]).mean()
+        x = np.array([t[0] for t in pp]).mean()
         xx = int(img.shape[0] - (x * 4 + 2))
         yy = int(img.shape[1] - (y * 4 + 2))
         ans.append(((yy, xx), color))

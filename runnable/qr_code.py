@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from .utils import *
+from utils import *
 from pyzbar.pyzbar import decode
 
 
