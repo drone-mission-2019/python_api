@@ -275,8 +275,6 @@ def get_people(img, fuck_threshold):
     # show_image(img3)
     ans = []
     for pp in new_points:
-        x = np.array([t[0] for t in pp]).mean()
-        y = np.array([t[1] for t in pp]).mean()
         X = np.zeros((len(pp), 3))
         for i, p in enumerate(pp):
             color = img3[p[0], p[1]]
@@ -293,6 +291,8 @@ def get_people(img, fuck_threshold):
         #     if label == t:
         #         print(X[i])
         color = kmeans.cluster_centers_[t]
+        y = np.array([t[1] for t in pp]).mean()
+        x = np.percentile(np.array([t[0] for t in pp]), 5)
         xx = int(img.shape[0] - (x * 4 + 2))
         yy = int(img.shape[1] - (y * 4 + 2))
         ans.append(((yy, xx), color))
