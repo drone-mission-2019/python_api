@@ -20,5 +20,5 @@ class PeopleChoose:
             if min_pos is None or pos_distance < min_distance:
                 min_pos = pos
                 min_distance = pos_distance
-        print(min_pos)
+        self.last_position = min_pos.copy()
         return min_pos

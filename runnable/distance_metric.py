@@ -39,7 +39,7 @@ def trivial_transformation(clientID, x, y, z):
 def toRadians(args):
     return math.radians(args)
 
-def reprojectionTo3D(cliendID, zed1, zed0):
+def reprojectionTo3D(clientID, zed1, zed0):
     B = 0.12
     P_x = 1280.0
     P_y = 720.0
@@ -52,6 +52,10 @@ def reprojectionTo3D(cliendID, zed1, zed0):
 
     x0, y0 = zed0
     x1, y1 = zed1
+    x0 = P_x - x0
+    x1 = P_x - x1
+    y0 = P_y - y0
+    y1 = P_y - y1
     x_l = x1 - P_x / 2
     x_r = x0 - P_x / 2
     y_p = P_y / 2 - (y0)
@@ -158,8 +162,9 @@ def get_people_pos(clientID, zed1, zed0):
             x = (B * x_l) / (x_l - x_r)
             y = (B * P_x * math.tan(beta_rad / 2) * y_p) / ((x_l - x_r) * P_y * math.tan(alpha_rad / 2))
             z = (B * P_x / 2) / ((x_l - x_r) * math.tan(alpha_rad / 2))
-            pos_result.append(trivial_transformation(clientID, -x, -y, z))
-            print(pos0, pos1, pos_result[-1])
+            result_tmp = trivial_transformation(clientID, -x, -y, z)
+            if result_tmp is not None:
+                pos_result.append(result_tmp)
     return pos_result
 
 

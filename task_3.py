@@ -8,6 +8,8 @@ import copy
 from runnable.distance_metric import get_people_pos
 from people_choose import PeopleChoose
 from speed_predict_task3 import SpeedPredictor
+from face_recognition.face_tracking import resNet
+from queue import Queue
 
 
 def main():
@@ -57,38 +59,52 @@ def main():
     vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking)
     vrep.simxSynchronousTrigger(clientID)
 
-    target_name = "Bill#1"
+    target_name = "Bill#2"
     photo_num = 0
-    # while True:
-    #     # 巡航搜索        
-    #     search_points = [[-5, 0], [0, 0], [0, 7], [5, 7], [5, 2], [9, 2], [9, -2], [5, -2], [5, -8], [2, -8], [2, -4], [-5, -4]]
-    #     photo_interval = 50
-    #     photo_count = photo_interval
-    #     find_flag = False
-    #     pos_now = np.array(flight_controller.getPosition('controller')[:2])
-    #     start_num = find_nearest_point_num(pos_now, search_points)
-    #     last_position = [4.65, -7.4]
-    #     while True:
-    #         for target_point_0 in search_points[start_num:]:
-    #             target_point = copy.deepcopy(target_point_0)
-    #             target_point.append(base_position[2])
-    #             target_point = np.array(target_point)
-    #             flight_controller.moveTo(target_point, 1, 1, True)
-    #             while flight_controller.left_time > 0:
-    #                 if photo_count >= photo_interval:
-    #                     flight_controller.to_take_photos()
-    #                     photo_count = 0
-    #                 else:
-    #                     photo_count += 1
-    #                 result = flight_controller.step_forward_move()
-    #                 if 'photos' in result:
-    #                     cv2.imwrite("task_3/"+str(photo_num)+"zed0.jpg", result['photos'][0])
-    #                     cv2.imwrite("task_3/"+str(photo_num)+"zed1.jpg", result['photos'][1])
-    #                     photo_num += 1
-    #         start_num = 0
+    while True:
+        # 巡航搜索        
+        search_points = [[-4.175, -0.2]]
+        photo_interval = 50
+        photo_count = photo_interval
+        find_flag = False
+        pos_now = np.array(flight_controller.getPosition('controller')[:2])
+        start_num = find_nearest_point_num(pos_now, search_points)
+        last_position = [4.65, -7.4]
+        while True:
+            for target_point_0 in search_points[start_num:]:
+                target_point = copy.deepcopy(target_point_0)
+                target_point.append(base_position[2])
+                target_point = np.array(target_point)
+                flight_controller.moveTo(target_point, 1, 1, True)
+                while flight_controller.left_time > 0:
+                    if photo_count >= photo_interval:
+                        flight_controller.to_take_photos()
+                        photo_count = 0
+                    else:
+                        photo_count += 1
+                    result = flight_controller.step_forward_move()
+                    if 'photos' in result:
+                        cv2.imwrite("task_3/"+str(photo_num)+"zed0.jpg", result['photos'][0])
+                        cv2.imwrite("task_3/"+str(photo_num)+"zed1.jpg", result['photos'][1])
+                        pos = resNet(result['photos'][1], result['photos'][0], 4, clientID)
+                        print(pos)
+                        if pos is not None:
+                            target_position = pos
+                            find_flag = True
+                            break
+                        photo_num += 1
+                if find_flag:
+                    break
+            if find_flag:
+                break
+            start_num = 0
+        if find_flag:
+            break
+    print("Find target", target_position)
+    flight_controller.moving_queue = Queue()
 
-    _, target_handle = vrep.simxGetObjectHandle(clientID, target_name, vrep.simx_opmode_blocking)
-    _, target_position = vrep.simxGetObjectPosition(clientID, target_handle, -1, vrep.simx_opmode_blocking)
+    # _, target_handle = vrep.simxGetObjectHandle(clientID, target_name, vrep.simx_opmode_blocking)
+    # _, target_position = vrep.simxGetObjectPosition(clientID, target_handle, -1, vrep.simx_opmode_blocking)
     target_position[2] = base_position[2]
     target_position = np.array(target_position)
     time_interval = 5
@@ -99,8 +115,8 @@ def main():
         print(photo_num)
         move_to_position = copy.deepcopy(target_position)
         move_to_position[1] += 3
-        flight_controller.setPosition('controller', np.array(move_to_position))
-        # flight_controller.moveTo(np.array(move_to_position), 2, 1, True)
+        print(target_position, move_to_position)
+        flight_controller.moveTo(np.array(move_to_position), 1, 1, True)
         flight_controller.to_take_photos()
         for i in range(time_interval):
             result = flight_controller.step_forward_move()
