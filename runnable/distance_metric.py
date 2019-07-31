@@ -136,7 +136,6 @@ def get_people_pos(clientID, zed1, zed0):
 
     result0_list = get_people(zed0, 200)
     result1_list = get_people(zed1, 200)
-    print(result0_list, result1_list)
     if len(result0_list) == 0 or len(result1_list) == 0:
         return None, None
 

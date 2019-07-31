@@ -40,10 +40,10 @@ def main():
         vision_handle_1=vision_handle_1,
         synchronous=synchronous_flag,
         time_interval=time_interval,
-        v_max=0.2,
+        v_max=0.0305,
         v_add=0.0005,
         v_sub=0.0005,
-        v_min=0.02,
+        v_min=0.03,
         v_constant=0.02,
         use_constant_v=False,
         )
@@ -96,9 +96,11 @@ def main():
     people_chooser.last_position = target_position[:2]
     print("Target:", target_position)
     while True:
+        print(photo_num)
         move_to_position = copy.deepcopy(target_position)
         move_to_position[1] += 2
-        flight_controller.moveTo(target_position, 1, 1, True)
+        flight_controller.setPosition('controller', np.array(move_to_position))
+        # flight_controller.moveTo(np.array(move_to_position), 2, 1, True)
         flight_controller.to_take_photos()
         for i in range(time_interval):
             result = flight_controller.step_forward_move()
@@ -107,7 +109,6 @@ def main():
                 cv2.imwrite("task_3_2/"+str(photo_num)+"zed0.jpg", result['photos'][0])
                 cv2.imwrite("task_3_2/"+str(photo_num)+"zed1.jpg", result['photos'][1])
                 photo_num += 1
-                print("Pos list", pos_list)
                 next_position = people_chooser.find_next_position(pos_list)
                 next_position.append(target_position[2])
                 target_position = np.array(next_position)
