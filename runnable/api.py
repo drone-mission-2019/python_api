@@ -206,8 +206,8 @@ def get_people(img, fuck_threshold):
     fuck2_all = np.array([204.345, 198.48, 189.49])
     tmp = (img2 < 2).sum(axis=2)
     img2[tmp == 3] = [255, 255, 255]
-    img2[np.abs(img2 - fuck1_all).max(axis=2) < 10] = [255, 255, 255]
-    img2[np.abs(img2 - fuck2_all).max(axis=2) < 10] = [255, 255, 255]
+    img2[np.abs(img2 - fuck1_all).max(axis=2) < 20] = [255, 255, 255]
+    img2[np.abs(img2 - fuck2_all).max(axis=2) < 20] = [255, 255, 255]
     img2 = cv2.resize(img2, (320, 180))
     # show_image(img2)
     visit = np.zeros((img2.shape[0], img2.shape[1]))
