@@ -292,7 +292,7 @@ def get_people(img, fuck_threshold):
         #         print(X[i])
         color = kmeans.cluster_centers_[t]
         y = np.array([t[1] for t in pp]).mean()
-        x = np.percentile(np.array([t[0] for t in pp]), 5)
+        x = np.array([t[0] for t in pp]).mean()
         xx = int(img.shape[0] - (x * 4 + 2))
         yy = int(img.shape[1] - (y * 4 + 2))
         ans.append(((yy, xx), color))

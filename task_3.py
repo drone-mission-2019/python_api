@@ -98,7 +98,7 @@ def main():
     while True:
         print(photo_num)
         move_to_position = copy.deepcopy(target_position)
-        move_to_position[1] += 2
+        move_to_position[1] += 3
         flight_controller.setPosition('controller', np.array(move_to_position))
         # flight_controller.moveTo(np.array(move_to_position), 2, 1, True)
         flight_controller.to_take_photos()
