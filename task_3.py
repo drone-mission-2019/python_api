@@ -57,92 +57,61 @@ def main():
     vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking)
     vrep.simxSynchronousTrigger(clientID)
 
-    # photo_interval = 5
-    # last_position = [4.65, -7.4]
-    # target_position = copy.deepcopy(last_position)
-    # target_position.append(base_position[2])
-    # target_position = np.array(target_position)
-    # speed_predictor = SpeedPredictor(4, None, max_predict_step=1, extra_time=0)
-    # flight_controller.moveTo(target_position, 2, 1, True)
-    # photo_num = 0
-    # position_getter = PeopleChoose(time_interval=5, pos_threshold=2, color_threshold=15, ori_threshold=0.5)
-    # while True:
-    #     flight_controller.to_take_photos()
-    #     print("To take photos")
-    #     for iiii in range(photo_interval):
-    #         result = flight_controller.step_forward_move()
-    #         speed_predictor.step_forward()
-    #         if 'photos' in result:
-    #             print("Photo num", photo_num)
-    #             cv2.imwrite("task_3/"+str(photo_num)+"zed0.jpg", result['photos'][0])
-    #             cv2.imwrite("task_3/"+str(photo_num)+"zed1.jpg", result['photos'][1])
-    #             pos_list, color_list = get_people_pos(clientID, result['photos'][1], result['photos'][0], last_position)
-    #             print(pos_list, color_list)
-    #             if pos_list is None or color_list is None or len(pos_list) == 0 or len(color_list) == 0:
-    #                 continue
-    #             pos_new = position_getter.find_next_position(pos_list, color_list)
-    #             if pos_new is not None:
-    #                 last_position = pos_new
-    #             print("People pos", last_position)
-    #             if last_position is not None:
-    #                 target_position = copy.deepcopy(last_position)
-    #                 target_position.append(base_position[2])
-    #                 target_position = np.array(target_position)
-
-    #                 speed_predictor.give_new_information(np.array(target_position))
-    #                 new_target_position = speed_predictor.get_next_target(flight_controller.controller_position, flight_controller.left_time)
-    #                 if new_target_position is not None:
-    #                     left_time_before = flight_controller.left_time
-    #                     flight_controller.moveTo(new_target_position, 1, 1, True)
-    #                     flag = True  # 防止不收敛情况出现
-    #                     count = 0
-    #                     while flight_controller.left_time != left_time_before :
-    #                         if count >= 10:
-    #                             flag = False
-    #                             break
-    #                         new_target_position = speed_predictor.get_next_target(flight_controller.controller_position, flight_controller.left_time)
-    #                         if new_target_position is None:
-    #                             flag = False
-    #                             break
-    #                         left_time_before = flight_controller.left_time
-    #                         flight_controller.moveTo(new_target_position, 1, 1, True)
-    #                         count += 1
-    #                     if flag:
-    #                         target_position = new_target_position
-                    
-    #                 flight_controller.moveTo(target_position, 1, 1, True)
-    #     photo_num += 1
-
     target_name = "Bill#1"
     photo_num = 0
-    while True:
-        # 巡航搜索        
-        search_points = [[-5, 0], [0, 0], [0, 7], [5, 7], [5, 2], [9, 2], [9, -2], [5, -2], [5, -8], [2, -8], [2, -4], [0, -4], [-5, -4]]
-        photo_interval = 50
-        photo_count = photo_interval
-        find_flag = False
-        pos_now = np.array(flight_controller.getPosition('controller')[:2])
-        start_num = find_nearest_point_num(pos_now, search_points)
-        last_position = [4.65, -7.4]
-        while True:
-            for target_point_0 in search_points[start_num:]:
-                target_point = copy.deepcopy(target_point_0)
-                target_point.append(base_position[2])
-                target_point = np.array(target_point)
-                flight_controller.moveTo(target_point, 1, 1, True)
-                while flight_controller.left_time > 0:
-                    if photo_count >= photo_interval:
-                        flight_controller.to_take_photos()
-                        photo_count = 0
-                    else:
-                        photo_count += 1
-                    result = flight_controller.step_forward_move()
-                    if 'photos' in result:
-                        cv2.imwrite("task_3/"+str(photo_num)+"zed0.jpg", result['photos'][0])
-                        cv2.imwrite("task_3/"+str(photo_num)+"zed1.jpg", result['photos'][1])
-                        photo_num += 1
-            start_num = 0
+    # while True:
+    #     # 巡航搜索        
+    #     search_points = [[-5, 0], [0, 0], [0, 7], [5, 7], [5, 2], [9, 2], [9, -2], [5, -2], [5, -8], [2, -8], [2, -4], [-5, -4]]
+    #     photo_interval = 50
+    #     photo_count = photo_interval
+    #     find_flag = False
+    #     pos_now = np.array(flight_controller.getPosition('controller')[:2])
+    #     start_num = find_nearest_point_num(pos_now, search_points)
+    #     last_position = [4.65, -7.4]
+    #     while True:
+    #         for target_point_0 in search_points[start_num:]:
+    #             target_point = copy.deepcopy(target_point_0)
+    #             target_point.append(base_position[2])
+    #             target_point = np.array(target_point)
+    #             flight_controller.moveTo(target_point, 1, 1, True)
+    #             while flight_controller.left_time > 0:
+    #                 if photo_count >= photo_interval:
+    #                     flight_controller.to_take_photos()
+    #                     photo_count = 0
+    #                 else:
+    #                     photo_count += 1
+    #                 result = flight_controller.step_forward_move()
+    #                 if 'photos' in result:
+    #                     cv2.imwrite("task_3/"+str(photo_num)+"zed0.jpg", result['photos'][0])
+    #                     cv2.imwrite("task_3/"+str(photo_num)+"zed1.jpg", result['photos'][1])
+    #                     photo_num += 1
+    #         start_num = 0
 
+    _, target_handle = vrep.simxGetObjectHandle(clientID, target_name, vrep.simx_opmode_blocking)
+    _, target_position = vrep.simxGetObjectPosition(clientID, target_handle, -1, vrep.simx_opmode_blocking)
+    target_position[2] = base_position[2]
+    target_position = np.array(target_position)
+    time_interval = 5
+    people_chooser = PeopleChoose(pos_threshold=1, ori_threshold=0, color_threshold=None)
+    people_chooser.last_position = target_position[:2]
+    print("Target:", target_position)
+    while True:
+        move_to_position = copy.deepcopy(target_position)
+        move_to_position[1] += 2
+        flight_controller.moveTo(target_position, 1, 1, True)
+        flight_controller.to_take_photos()
+        for i in range(time_interval):
+            result = flight_controller.step_forward_move()
+            if 'photos' in result:
+                pos_list = get_people_pos(clientID, result['photos'][1], result['photos'][0])
+                cv2.imwrite("task_3_2/"+str(photo_num)+"zed0.jpg", result['photos'][0])
+                cv2.imwrite("task_3_2/"+str(photo_num)+"zed1.jpg", result['photos'][1])
+                photo_num += 1
+                print("Pos list", pos_list)
+                next_position = people_chooser.find_next_position(pos_list)
+                next_position.append(target_position[2])
+                target_position = np.array(next_position)
+                print("Target:", target_position)
 
 def find_nearest_point_num(pos_now, search_points):
     distance_min = -1

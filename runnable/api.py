@@ -41,35 +41,25 @@ def get_cylinder(img):
     t1 = img[:, :, 0] / 2 - img[:, :, 1]
     t2 = img[:, :, 0] / 2 - img[:, :, 2]
     img2[(t1 > 0) * (t2 > 0) * (img[:, :, 0] > 150)] = 255
-    L = 10
+    # show_image(img2, gray=True)
     aa = img2.sum(axis=1)
-    mm = -1e8
-    that1 = (0, 0)
-    for i in range(img.shape[0]):
-        l = i
-        r = i + L
-        if r > img.shape[0]:
-            break
-        tmp = aa[l: r].sum()
-        if tmp > mm:
-            mm = tmp
-            that1 = (l, r)
-    bb = img2.sum(axis=0)
-    mm = -1e8
-    that2 = (0, 0)
-    for i in range(img.shape[1]):
-        l = i
-        r = i + L
-        if r > img.shape[1]:
-            break
-        tmp = bb[l: r].sum()
-        if tmp > mm:
-            mm = tmp
-            that2 = (l, r)
-    if that1 == (0, 0) or that2 == (0, 0):
-        return False, (0, 0)
-    x = int((that1[0] + that1[1]) / 2)
-    y = int((that2[0] + that2[1]) / 2)
+    threshold = aa.max() * 0.8
+    l = 0
+    while aa[l] < threshold:
+        l += 1
+    r = aa.shape[0] - 1
+    while aa[r] < threshold:
+        r -= 1
+    x = int((l + r) / 2)
+    aa = img2.sum(axis=0)
+    threshold = aa.max() * 0.8
+    l = 0
+    while aa[l] < threshold:
+        l += 1
+    r = aa.shape[0] - 1
+    while aa[r] < threshold:
+        r -= 1
+    y = int((l + r) / 2)
     return True, (y, x)
 
 
@@ -147,26 +137,79 @@ def get_E_or_T(img):
 #   people: list of tuple(int, int)
 #       Each tuple represent a coordinate of people.
 #
-def get_people(img, eye):
+def get_people(img, fuck_threshold):
+    img2 = img.copy()
+    img2 = rotate(img2, 180).copy()
+    # show_image(img2)
+    img2[(img2[:, :, 0] == 112) * (img2[:, :, 1] == 160) * (img2[:, :, 2] == 202)] = [255, 255, 255]
+    img2 = cv2.resize(img2.copy(), (320, 180))
+    visit = np.zeros((img2.shape[0], img2.shape[1]))
+    belong = np.zeros(visit.shape)
+    cnt = 0
+    for i in range(img2.shape[0]):
+        for j in range(img2.shape[1]):
+            if not visit[i, j]:
+                Q = Queue()
+                Q.put((i, j))
+                visit[i, j] = 1
+                cnt += 1
+                belong[i, j] = cnt
+                dx = [-1, 0, 0, 1]
+                dy = [0, -1, 1, 0]
+                while not Q.empty():
+                    x, y = Q.get()
+                    for k in range(4):
+                        xx = x + dx[k]
+                        yy = y + dy[k]
+                        if xx < 0 or xx >= img2.shape[0] or yy < 0 or yy >= \
+                                img2.shape[1]:
+                            continue
+                        if visit[xx, yy] == 1:
+                            continue
+                        fuck1 = img2[x, y].astype(np.float64)
+                        fuck2 = img2[xx, yy].astype(np.float64)
+                        dist = np.abs(fuck1 - fuck2).sum()
+                        if dist > 10:
+                            continue
+                        visit[xx, yy] = 1
+                        belong[xx, yy] = cnt
+                        Q.put((xx, yy))
+    points = [[] for i in range(cnt + 1)]
+    for i in range(img2.shape[0]):
+        for j in range(img2.shape[1]):
+            if belong[i, j] > 0:
+                points[int(belong[i, j])].append((i, j))
+    for pp in points:
+        if len(pp) == 0:
+            continue
+        x = np.array([t[0] for t in pp])
+        y = np.array([t[1] for t in pp])
+        x0 = x.max()
+        if x0 < 40:
+            cc = 1
+        elif x0 < 80:
+            cc = 1.3
+        elif x0 < 120:
+            cc = 1.6
+        elif x0 < 160:
+            cc = 1.9
+        else:
+            cc = 2.2
+        if (x.max() - x.min()) > 60 * cc or (y.max() - y.min()) > 60 * cc or len(pp) > 300 * cc * cc:
+            for p in pp:
+                img2[p[0], p[1]] = [255, 255, 255]
+    # show_image(img2)
     fuck1 = np.array([172.87, 182.88, 188.63])
     fuck2 = np.array([189.49, 198.48, 204.345])
     fuck1_all = np.array([188.63, 182.88, 172.87])
     fuck2_all = np.array([204.345, 198.48, 189.49])
-    img2 = img.copy()
     tmp = (img2 < 2).sum(axis=2)
     img2[tmp == 3] = [255, 255, 255]
-    img2[np.abs(img2 - fuck1_all).max(axis=2) < 20] = [255, 255, 255]
-    img2[np.abs(img2 - fuck2_all).max(axis=2) < 20] = [255, 255, 255]
+    img2[np.abs(img2 - fuck1_all).max(axis=2) < 15] = [255, 255, 255]
+    img2[np.abs(img2 - fuck2_all).max(axis=2) < 15] = [255, 255, 255]
     tmp = img2[:, :, 0].astype(np.int64) + img2[:, :, 1] + img2[:, :, 2]
     img2[tmp > 700] = [255, 255, 255]
     img2 = cv2.resize(img2, (320, 180))
-    # print(img2.shape)
-    if eye:
-        img2[:30, 275:] = [255, 255, 255]
-        img2[:60, :35] = [255, 255, 255]
-    else:
-        img2[:30, 125:170] = [255, 255, 255]
-        img2[:30, 300:] = [255, 255, 255]
     # show_image(img2)
     visit = np.zeros((img2.shape[0], img2.shape[1]))
     belong = np.zeros(visit.shape)
@@ -202,10 +245,32 @@ def get_people(img, eye):
                 points[int(belong[i, j])].append((i, j))
     img3 = img2.copy()
     img3[:, :] = [255, 255, 255]
-    threshold = 200
+    threshold = fuck_threshold
     new_points = []
     for pp in points:
-        if len(pp) > threshold:
+        if len(pp) == 0:
+            continue
+        x = np.array([t[0] for t in pp])
+        y = np.array([t[1] for t in pp])
+        x0 = x.max()
+        if x0 < 40:
+            cc = 1
+        elif x0 < 80:
+            cc = 1.3
+        elif x0 < 120:
+            cc = 1.6
+        elif x0 < 160:
+            cc = 1.9
+        else:
+            cc = 2.2
+        if len(pp) > threshold * cc:
+            xl = np.percentile(x, 20)
+            xr = np.percentile(x, 80)
+            yl = np.percentile(y, 20)
+            yr = np.percentile(y, 80)
+            # print(x.max(), x.min(), y.max(), y.min(), xr, xl, yr, yl, ' ', x.mean(), y.mean(), len(pp))
+            if xr - xl < 1.3 * (yr - yl):
+                continue
             new_points.append(pp)
             for p in pp:
                 img3[p[0], p[1]] = img2[p[0], p[1]]
@@ -226,8 +291,13 @@ def get_people(img, eye):
         for label in kmeans.labels_:
             num[label] += 1
         t = num.argmax()
+        # for i, label in enumerate(kmeans.labels_):
+        #     if label == t:
+        #         print(X[i])
         color = kmeans.cluster_centers_[t]
-        ans.append(((int(y * 4 + 2), int(x * 4 + 2)), color))
+        xx = int(img.shape[0] - (x * 4 + 2))
+        yy = int(img.shape[1] - (y * 4 + 2))
+        ans.append(((yy, xx), color))
     return ans
 
 
